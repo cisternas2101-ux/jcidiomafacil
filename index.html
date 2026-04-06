@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Lingua³ — ES · EN · FR</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c1a;
+    --surface: #17142a;
+    --card: #1e1a35;
+    --border: rgba(255,255,255,0.08);
+    --es: #ff6b6b;
+    --en: #4ecdc4;
+    --fr: #ffe66d;
+    --text: #f0eeff;
+    --muted: #7a7599;
+    --radius: 18px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+
+  /* HEADER */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(14,12,26,0.92);
+    backdrop-filter: blur(20px);
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; }
+  .logo span:nth-child(1) { color: var(--es); }
+  .logo span:nth-child(2) { color: var(--text); opacity: 0.4; font-size: 0.9rem; }
+  .logo span:nth-child(3) { color: var(--en); }
+  .logo span:nth-child(4) { color: var(--text); opacity: 0.4; font-size: 0.9rem; }
+  .logo span:nth-child(5) { color: var(--fr); }
+
+  .stats-bar { display: flex; gap: 16px; margin-top: 10px; }
+  .stat { font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  .stat b { color: var(--text); font-weight: 500; }
+
+  /* NAV TABS */
+  .nav { display: flex; gap: 4px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab.active { background: var(--card); color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  /* MAIN */
+  .main { padding: 0 16px 100px; }
+  .section { display: none; animation: fadeUp 0.3s ease; }
+  .section.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+  /* VOCAB LIST */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; font-weight: 700;
+    margin: 20px 0 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .count-badge {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.7rem; font-weight: 400;
+    background: var(--card); border: 1px solid var(--border);
+    padding: 3px 10px; border-radius: 20px; color: var(--muted);
+  }
+
+  .search-box {
+    width: 100%; padding: 12px 16px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    outline: none; margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: rgba(255,255,255,0.25); }
+
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .cat-filter {
+    padding: 5px 14px; border-radius: 50px;
+    font-size: 0.75rem; font-weight: 500;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); cursor: pointer; transition: all 0.2s;
+  }
+  .cat-filter.active { background: var(--card); color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  .vocab-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    margin-bottom: 10px; cursor: pointer;
+    transition: transform 0.15s, border-color 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .vocab-card::before {
+    content: ''; position: absolute;
+    left: 0; top: 0; bottom: 0; width: 3px;
+    border-radius: 3px 0 0 3px;
+  }
+  .vocab-card[data-cat="salud"]::before { background: #ff6b9d; }
+  .vocab-card[data-cat="viaje"]::before { background: var(--en); }
+  .vocab-card[data-cat="comida"]::before { background: var(--fr); }
+  .vocab-card[data-cat="negocios"]::before { background: #a78bfa; }
+  .vocab-card[data-cat="familia"]::before { background: var(--es); }
+  .vocab-card[data-cat="frases"]::before { background: #6ee7b7; }
+  .vocab-card[data-cat="colores"]::before { background: linear-gradient(180deg, #ff6b6b, #ffe66d); }
+  .vocab-card[data-cat="numeros"]::before { background: #93c5fd; }
+  .vocab-card:active { transform: scale(0.98); }
+  .vocab-card:hover { border-color: rgba(255,255,255,0.18); }
+
+  .vc-langs { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .vc-es { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--es); font-weight: 700; }
+  .vc-sep { color: var(--muted); font-size: 0.75rem; }
+  .vc-en { font-size: 0.9rem; color: var(--en); font-weight: 500; }
+  .vc-fr { font-size: 0.9rem; color: var(--fr); font-weight: 500; }
+  .vc-meta { margin-top: 6px; display: flex; align-items: center; gap: 8px; }
+  .vc-cat { font-size: 0.68rem; color: var(--muted); background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 10px; }
+  .vc-stars { font-size: 0.75rem; color: var(--fr); letter-spacing: -2px; }
+  .vc-actions { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; gap: 6px; }
+  .vc-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 4px; border-radius: 8px; transition: background 0.2s; }
+  .vc-btn:hover { background: rgba(255,255,255,0.08); }
+
+  /* ADD WORD FORM */
+  .add-form {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    margin-bottom: 20px;
+  }
+  .form-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 16px; }
+  .field-group { margin-bottom: 12px; }
+  .field-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+  .fl-es { color: var(--es); } .fl-en { color: var(--en); } .fl-fr { color: var(--fr); }
+  .field-input, .field-select {
+    width: 100%; padding: 11px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    outline: none; transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .field-input:focus, .field-select:focus { border-color: rgba(255,255,255,0.3); }
+  .btn-primary {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, #6c63ff, #a855f7);
+    border: none; border-radius: 14px;
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 500; cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+
+  /* PRACTICE */
+  .practice-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .mode-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 14px;
+    cursor: pointer; text-align: center;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .mode-card.selected { border-color: #6c63ff; box-shadow: 0 0 0 2px rgba(108,99,255,0.3); }
+  .mode-icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .mode-name { font-size: 0.8rem; font-weight: 500; }
+  .mode-desc { font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
+
+  .lang-select-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .lang-pill {
+    flex: 1; padding: 10px 8px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--card);
+    color: var(--muted); font-size: 0.8rem; font-weight: 500;
+    cursor: pointer; text-align: center; transition: all 0.2s;
+  }
+  .lang-pill.active-es { border-color: var(--es); color: var(--es); background: rgba(255,107,107,0.1); }
+  .lang-pill.active-en { border-color: var(--en); color: var(--en); background: rgba(78,205,196,0.1); }
+  .lang-pill.active-fr { border-color: var(--fr); color: var(--fr); background: rgba(255,230,109,0.1); }
+
+  .flashcard-wrap { perspective: 800px; margin: 20px 0; }
+  .flashcard {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px; padding: 40px 24px;
+    text-align: center; min-height: 200px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.5s;
+    transform-style: preserve-3d; position: relative;
+    box-shadow: var(--shadow);
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .fc-front, .fc-back { backface-visibility: hidden; width: 100%; }
+  .fc-back { position: absolute; transform: rotateY(180deg); }
+  .fc-question-lang { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .fc-word { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; }
+  .fc-hint { font-size: 0.8rem; color: var(--muted); margin-top: 12px; }
+  .fc-answer { display: flex; flex-direction: column; gap: 10px; }
+  .fc-ans-item { padding: 10px 20px; border-radius: 12px; font-size: 1.1rem; font-weight: 500; }
+  .fc-ans-es { background: rgba(255,107,107,0.15); color: var(--es); }
+  .fc-ans-en { background: rgba(78,205,196,0.15); color: var(--en); }
+  .fc-ans-fr { background: rgba(255,230,109,0.15); color: var(--fr); }
+
+  .fc-controls { display: flex; gap: 10px; margin-top: 16px; }
+  .fc-btn {
+    flex: 1; padding: 14px; border-radius: 14px;
+    border: none; font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .fc-btn.wrong { background: rgba(255,107,107,0.2); color: var(--es); }
+  .fc-btn.right { background: rgba(78,205,196,0.2); color: var(--en); }
+  .fc-btn:active { transform: scale(0.96); }
+
+  .progress-bar-wrap { background: var(--surface); border-radius: 20px; height: 6px; margin-bottom: 20px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #6c63ff, #a855f7); border-radius: 20px; transition: width 0.4s; }
+
+  .quiz-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 20px;
+    margin-bottom: 16px; text-align: center;
+  }
+  .quiz-q-lang { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .quiz-q-word { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  .quiz-opt {
+    padding: 14px 10px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; text-align: center;
+  }
+  .quiz-opt.correct { background: rgba(78,205,196,0.2); border-color: var(--en); color: var(--en); }
+  .quiz-opt.wrong { background: rgba(255,107,107,0.15); border-color: var(--es); color: var(--es); }
+  .quiz-opt.disabled { pointer-events: none; }
+  .quiz-next {
+    width: 100%; padding: 14px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, #6c63ff, #a855f7);
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 500; cursor: pointer;
+    margin-top: 12px; display: none; transition: opacity 0.2s;
+  }
+  .score-display {
+    text-align: center; padding: 30px 20px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); display: none;
+  }
+  .score-num { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 900; color: var(--fr); }
+  .score-label { color: var(--muted); margin-top: 6px; font-size: 0.9rem; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(14,12,26,0.95); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+  .bn-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 6px; cursor: pointer;
+    color: var(--muted); font-size: 0.65rem; font-weight: 500;
+    transition: color 0.2s;
+  }
+  .bn-item.active { color: #a78bfa; }
+  .bn-icon { font-size: 1.3rem; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #1e1a35; border: 1px solid rgba(255,255,255,0.15);
+    padding: 10px 20px; border-radius: 50px;
+    font-size: 0.82rem; color: var(--text);
+    opacity: 0; transition: all 0.3s; z-index: 200; white-space: nowrap;
+    box-shadow: var(--shadow);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+  .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+
+  .start-btn {
+    width: 100%; padding: 16px; border-radius: 14px; border: none;
+    background: linear-gradient(135deg, #6c63ff, #a855f7);
+    color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 1rem; font-weight: 600; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .start-btn:active { opacity: 0.85; }
+
+  /* SPEAK BUTTONS */
+  .speak-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid var(--border);
+    border-radius: 50%; width: 30px; height: 30px;
+    cursor: pointer; font-size: 0.85rem;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .speak-btn:active, .speak-btn.speaking { background: rgba(255,255,255,0.12); transform: scale(1.15); }
+  .speak-btn-es { border-color: rgba(255,107,107,0.4); }
+  .speak-btn-en { border-color: rgba(78,205,196,0.4); }
+  .speak-btn-fr { border-color: rgba(255,230,109,0.4); }
+  .fc-speak-row { display: flex; justify-content: center; gap: 12px; margin-top: 14px; }
+  .fc-speak-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .fc-speak-label { font-size: 0.65rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <span>ES</span><span>·</span><span>EN</span><span>·</span><span>FR</span>
+    </div>
+    <div style="font-size:0.75rem; color:var(--muted);">Lingua³</div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat">📚 <b id="stat-total">0</b> palabras</div>
+    <div class="stat">✅ <b id="stat-learned">0</b> aprendidas</div>
+    <div class="stat">🔥 <b id="stat-streak">0</b> días</div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="tab active" onclick="showSection('vocab')">📖 Vocabulario</button>
+  <button class="tab" onclick="showSection('add')">➕ Agregar</button>
+  <button class="tab" onclick="showSection('practice')">🎯 Práctica</button>
+</div>
+
+<!-- VOCAB -->
+<div class="main">
+<div id="sec-vocab" class="section active">
+  <div class="section-title">
+    Mis Palabras
+    <span class="count-badge" id="count-badge">0 entradas</span>
+  </div>
+  <input class="search-box" id="search-input" placeholder="🔍 Buscar en español, inglés o francés..." oninput="renderVocab()">
+  <div class="filter-row" id="cat-filters"></div>
+  <div id="vocab-list"></div>
+</div>
+
+<!-- ADD -->
+<div id="sec-add" class="section">
+  <div class="section-title">Agregar Entrada</div>
+  <div class="add-form">
+    <div class="form-title">Nueva palabra o frase</div>
+    <div class="field-group">
+      <div class="field-label"><span class="fl-es">🇪🇸</span> Español</div>
+      <input class="field-input" id="inp-es" placeholder="ej. Buenas tardes">
+    </div>
+    <div class="field-group">
+      <div class="field-label"><span class="fl-en">🇬🇧</span> English</div>
+      <input class="field-input" id="inp-en" placeholder="e.g. Good afternoon">
+    </div>
+    <div class="field-group">
+      <div class="field-label"><span class="fl-fr">🇫🇷</span> Français</div>
+      <input class="field-input" id="inp-fr" placeholder="ex. Bonne après-midi">
+    </div>
+    <div class="field-group">
+      <div class="field-label">📂 Categoría</div>
+      <select class="field-select" id="inp-cat">
+        <option value="frases">Frases generales</option>
+        <option value="viaje">Viaje</option>
+        <option value="comida">Comida</option>
+        <option value="salud">Salud</option>
+        <option value="negocios">Negocios</option>
+        <option value="familia">Familia</option>
+        <option value="colores">Colores</option>
+        <option value="numeros">Números</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="addEntry()">✨ Guardar entrada</button>
+  </div>
+</div>
+
+<!-- PRACTICE -->
+<div id="sec-practice" class="section">
+  <div class="section-title">Modo de Práctica</div>
+
+  <div class="practice-modes" id="mode-selector">
+    <div class="mode-card selected" data-mode="flashcard" onclick="selectMode(this)">
+      <div class="mode-icon">🃏</div>
+      <div class="mode-name">Flashcards</div>
+      <div class="mode-desc">Voltear y recordar</div>
+    </div>
+    <div class="mode-card" data-mode="quiz" onclick="selectMode(this)">
+      <div class="mode-icon">🧠</div>
+      <div class="mode-name">Quiz</div>
+      <div class="mode-desc">4 opciones</div>
+    </div>
+  </div>
+
+  <div class="section-title" style="font-size:1rem; margin-bottom:8px;">Idioma de pregunta</div>
+  <div class="lang-select-row">
+    <div class="lang-pill active-es" data-lang="es" onclick="selectLang(this)">🇪🇸 Español</div>
+    <div class="lang-pill" data-lang="en" onclick="selectLang(this)">🇬🇧 English</div>
+    <div class="lang-pill" data-lang="fr" onclick="selectLang(this)">🇫🇷 Français</div>
+  </div>
+
+  <button class="start-btn" onclick="startSession()">▶ Comenzar sesión</button>
+
+  <div id="practice-area" style="margin-top:20px;"></div>
+</div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bn-item active" onclick="showSection('vocab')"><div class="bn-icon">📖</div>Palabras</div>
+  <div class="bn-item" onclick="showSection('add')"><div class="bn-icon">➕</div>Agregar</div>
+  <div class="bn-item" onclick="showSection('practice')"><div class="bn-icon">🎯</div>Práctica</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_DICT = [
+  // FRASES GENERALES
+  { id:1, es:"Hola",              en:"Hello",             fr:"Bonjour",           cat:"frases", stars:3 },
+  { id:2, es:"Buenas tardes",     en:"Good afternoon",    fr:"Bonne après-midi",  cat:"frases", stars:3 },
+  { id:3, es:"Buenas noches",     en:"Good evening",      fr:"Bonsoir",           cat:"frases", stars:3 },
+  { id:4, es:"¿Cómo estás?",      en:"How are you?",      fr:"Comment vas-tu?",   cat:"frases", stars:2 },
+  { id:5, es:"Muy bien, gracias", en:"Very well, thanks", fr:"Très bien, merci",  cat:"frases", stars:2 },
+  { id:6, es:"Por favor",         en:"Please",            fr:"S'il vous plaît",   cat:"frases", stars:3 },
+  { id:7, es:"Gracias",           en:"Thank you",         fr:"Merci",             cat:"frases", stars:3 },
+  { id:8, es:"De nada",           en:"You're welcome",    fr:"De rien",           cat:"frases", stars:2 },
+  { id:9, es:"Lo siento",         en:"I'm sorry",         fr:"Je suis désolé",    cat:"frases", stars:2 },
+  { id:10,es:"No entiendo",       en:"I don't understand",fr:"Je ne comprends pas",cat:"frases",stars:1},
+  { id:11,es:"¿Cuánto cuesta?",   en:"How much is it?",   fr:"Combien ça coûte?", cat:"frases", stars:2 },
+  { id:12,es:"¿Dónde está...?",   en:"Where is...?",      fr:"Où est...?",        cat:"frases", stars:2 },
+  // VIAJE
+  { id:13,es:"El aeropuerto",     en:"The airport",       fr:"L'aéroport",        cat:"viaje",  stars:2 },
+  { id:14,es:"El hotel",          en:"The hotel",         fr:"L'hôtel",           cat:"viaje",  stars:3 },
+  { id:15,es:"El tren",           en:"The train",         fr:"Le train",          cat:"viaje",  stars:3 },
+  { id:16,es:"El pasaporte",      en:"The passport",      fr:"Le passeport",      cat:"viaje",  stars:2 },
+  { id:17,es:"La maleta",         en:"The suitcase",      fr:"La valise",         cat:"viaje",  stars:2 },
+  { id:18,es:"La reservación",    en:"The reservation",   fr:"La réservation",    cat:"viaje",  stars:1 },
+  // COMIDA
+  { id:19,es:"El desayuno",       en:"Breakfast",         fr:"Le petit-déjeuner", cat:"comida", stars:2 },
+  { id:20,es:"La cena",           en:"Dinner",            fr:"Le dîner",          cat:"comida", stars:2 },
+  { id:21,es:"El agua",           en:"Water",             fr:"L'eau",             cat:"comida", stars:3 },
+  { id:22,es:"El vino",           en:"Wine",              fr:"Le vin",            cat:"comida", stars:3 },
+  { id:23,es:"El pan",            en:"Bread",             fr:"Le pain",           cat:"comida", stars:3 },
+  { id:24,es:"La cuenta",         en:"The bill",          fr:"L'addition",        cat:"comida", stars:2 },
+  // SALUD
+  { id:25,es:"El médico",         en:"The doctor",        fr:"Le médecin",        cat:"salud",  stars:2 },
+  { id:26,es:"La farmacia",       en:"The pharmacy",      fr:"La pharmacie",      cat:"salud",  stars:2 },
+  { id:27,es:"Me duele la cabeza",en:"My head hurts",     fr:"J'ai mal à la tête",cat:"salud",  stars:1 },
+  // NEGOCIOS
+  { id:28,es:"La reunión",        en:"The meeting",       fr:"La réunion",        cat:"negocios",stars:2 },
+  { id:29,es:"El contrato",       en:"The contract",      fr:"Le contrat",        cat:"negocios",stars:2 },
+  { id:30,es:"La empresa",        en:"The company",       fr:"L'entreprise",      cat:"negocios",stars:2 },
+  // FAMILIA
+  { id:31,es:"La madre",          en:"Mother",            fr:"La mère",           cat:"familia", stars:3 },
+  { id:32,es:"El padre",          en:"Father",            fr:"Le père",           cat:"familia", stars:3 },
+  { id:33,es:"El hermano",        en:"Brother",           fr:"Le frère",          cat:"familia", stars:3 },
+  { id:34,es:"La hermana",        en:"Sister",            fr:"La sœur",           cat:"familia", stars:3 },
+  // COLORES
+  { id:35,es:"Rojo",              en:"Red",               fr:"Rouge",             cat:"colores", stars:3 },
+  { id:36,es:"Azul",              en:"Blue",              fr:"Bleu",              cat:"colores", stars:3 },
+  { id:37,es:"Verde",             en:"Green",             fr:"Vert",              cat:"colores", stars:3 },
+  { id:38,es:"Amarillo",          en:"Yellow",            fr:"Jaune",             cat:"colores", stars:2 },
+  { id:39,es:"Negro",             en:"Black",             fr:"Noir",              cat:"colores", stars:3 },
+  { id:40,es:"Blanco",            en:"White",             fr:"Blanc",             cat:"colores", stars:3 },
+  // NUMEROS
+  { id:41,es:"Uno",               en:"One",               fr:"Un",                cat:"numeros", stars:3 },
+  { id:42,es:"Dos",               en:"Two",               fr:"Deux",              cat:"numeros", stars:3 },
+  { id:43,es:"Tres",              en:"Three",             fr:"Trois",             cat:"numeros", stars:3 },
+  { id:44,es:"Diez",              en:"Ten",               fr:"Dix",               cat:"numeros", stars:2 },
+  { id:45,es:"Cien",              en:"One hundred",       fr:"Cent",              cat:"numeros", stars:2 },
+];
+
+// --- STATE ---
+let dict = JSON.parse(localStorage.getItem('lingua3_dict') || 'null') || JSON.parse(JSON.stringify(DEFAULT_DICT));
+let nextId = Math.max(...dict.map(d=>d.id), 0) + 1;
+let streak = parseInt(localStorage.getItem('lingua3_streak') || '0');
+let activeCategory = 'all';
+let practiceMode = 'flashcard';
+let practiceLang = 'es';
+let sessionCards = [];
+let sessionIdx = 0;
+let sessionScore = 0;
+let fcFlipped = false;
+let quizAnswered = false;
+
+function save() { localStorage.setItem('lingua3_dict', JSON.stringify(dict)); updateStats(); }
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = dict.length;
+  document.getElementById('stat-learned').textContent = dict.filter(d=>d.stars>=3).length;
+  document.getElementById('stat-streak').textContent = streak;
+}
+
+// TABS / NAV
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.bn-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  const tabs = document.querySelectorAll('.tab');
+  const map = {vocab:0, add:1, practice:2};
+  tabs[map[id]].classList.add('active');
+  document.querySelectorAll('.bn-item')[map[id]].classList.add('active');
+  if (id==='vocab') renderVocab();
+}
+
+// CATEGORIES
+function getCategories() {
+  const cats = [...new Set(dict.map(d=>d.cat))];
+  return cats;
+}
+
+function renderCatFilters() {
+  const wrap = document.getElementById('cat-filters');
+  const cats = getCategories();
+  wrap.innerHTML = `<button class="cat-filter ${activeCategory==='all'?'active':''}" onclick="filterCat('all')">Todas</button>`;
+  cats.forEach(c=>{
+    const labels = {frases:'💬 Frases', viaje:'✈️ Viaje', comida:'🍽 Comida', salud:'💊 Salud', negocios:'💼 Negocios', familia:'👨‍👩‍👧 Familia', colores:'🎨 Colores', numeros:'🔢 Números'};
+    wrap.innerHTML += `<button class="cat-filter ${activeCategory===c?'active':''}" onclick="filterCat('${c}')">${labels[c]||c}</button>`;
+  });
+}
+
+function filterCat(cat) {
+  activeCategory = cat;
+  renderVocab();
+}
+
+function renderVocab() {
+  renderCatFilters();
+  const q = document.getElementById('search-input').value.toLowerCase();
+  let items = dict;
+  if (activeCategory !== 'all') items = items.filter(d=>d.cat===activeCategory);
+  if (q) items = items.filter(d=>d.es.toLowerCase().includes(q)||d.en.toLowerCase().includes(q)||d.fr.toLowerCase().includes(q));
+
+  document.getElementById('count-badge').textContent = items.length + ' entradas';
+  const list = document.getElementById('vocab-list');
+  if (!items.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><div>No se encontraron entradas</div></div>`;
+    return;
+  }
+  list.innerHTML = items.map(d=>`
+    <div class="vocab-card" data-cat="${d.cat}" onclick="toggleStars(${d.id})">
+      <div class="vc-langs" style="align-items:center; gap:6px;">
+        <span class="vc-es">${d.es}</span>
+        <button class="speak-btn speak-btn-es" onclick="event.stopPropagation();speak('${d.es.replace(/'/g,"\\'")}','es',this)" title="Escuchar español">🔊</button>
+      </div>
+      <div class="vc-langs" style="align-items:center; gap:6px; margin-top:4px;">
+        <span class="vc-en">${d.en}</span>
+        <button class="speak-btn speak-btn-en" onclick="event.stopPropagation();speak('${d.en.replace(/'/g,"\\'")}','en',this)" title="Listen English">🔊</button>
+        <span class="vc-sep" style="margin:0 2px;">·</span>
+        <span class="vc-fr">${d.fr}</span>
+        <button class="speak-btn speak-btn-fr" onclick="event.stopPropagation();speak('${d.fr.replace(/'/g,"\\'")}','fr',this)" title="Écouter français">🔊</button>
+      </div>
+      <div class="vc-meta" style="margin-top:6px;">
+        <span class="vc-cat">${d.cat}</span>
+        <span class="vc-stars">${'★'.repeat(d.stars)}${'☆'.repeat(3-d.stars)}</span>
+      </div>
+      <div class="vc-actions">
+        <button class="vc-btn" onclick="event.stopPropagation();deleteEntry(${d.id})" title="Eliminar">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleStars(id) {
+  const entry = dict.find(d=>d.id===id);
+  if (!entry) return;
+  entry.stars = entry.stars >= 3 ? 1 : entry.stars + 1;
+  save(); renderVocab();
+  showToast(entry.stars===3 ? '⭐ ¡Dominado!' : '📝 Nivel actualizado');
+}
+
+function deleteEntry(id) {
+  dict = dict.filter(d=>d.id!==id);
+  save(); renderVocab();
+  showToast('🗑 Eliminado');
+}
+
+function addEntry() {
+  const es = document.getElementById('inp-es').value.trim();
+  const en = document.getElementById('inp-en').value.trim();
+  const fr = document.getElementById('inp-fr').value.trim();
+  const cat = document.getElementById('inp-cat').value;
+  if (!es || !en || !fr) { showToast('⚠️ Completa los tres idiomas'); return; }
+  dict.push({ id: nextId++, es, en, fr, cat, stars: 1 });
+  save();
+  document.getElementById('inp-es').value = '';
+  document.getElementById('inp-en').value = '';
+  document.getElementById('inp-fr').value = '';
+  showToast('✅ Guardado correctamente');
+  showSection('vocab');
+}
+
+// PRACTICE
+function selectMode(el) {
+  document.querySelectorAll('.mode-card').forEach(m=>m.classList.remove('selected'));
+  el.classList.add('selected');
+  practiceMode = el.dataset.mode;
+}
+
+function selectLang(el) {
+  document.querySelectorAll('.lang-pill').forEach(p=>p.className='lang-pill');
+  el.classList.add('active-'+el.dataset.lang);
+  practiceLang = el.dataset.lang;
+}
+
+function startSession() {
+  sessionCards = [...dict].sort(()=>Math.random()-0.5).slice(0, Math.min(10, dict.length));
+  sessionIdx = 0; sessionScore = 0;
+  const area = document.getElementById('practice-area');
+  area.innerHTML = '';
+  if (!sessionCards.length) { area.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>Agrega palabras primero</div></div>'; return; }
+  streak = (streak||0) + 1;
+  localStorage.setItem('lingua3_streak', streak);
+  updateStats();
+  if (practiceMode === 'flashcard') renderFlashcard();
+  else renderQuiz();
+}
+
+function getWordInLang(entry, lang) { return entry[lang]; }
+function getOtherLangs(lang) { return ['es','en','fr'].filter(l=>l!==lang); }
+function langLabel(lang) { return {es:'🇪🇸 Español', en:'🇬🇧 English', fr:'🇫🇷 Français'}[lang]; }
+
+// FLASHCARDS
+function renderFlashcard() {
+  const area = document.getElementById('practice-area');
+  const total = sessionCards.length;
+  const pct = (sessionIdx / total * 100).toFixed(0);
+  const entry = sessionCards[sessionIdx];
+  const others = getOtherLangs(practiceLang);
+  fcFlipped = false;
+  area.innerHTML = `
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+    <div style="text-align:center; font-size:0.78rem; color:var(--muted); margin-bottom:12px;">${sessionIdx+1} / ${total}</div>
+    <div class="flashcard-wrap">
+      <div class="flashcard" id="fc" onclick="flipCard()">
+        <div class="fc-front">
+          <div class="fc-question-lang">${langLabel(practiceLang)}</div>
+          <div class="fc-word" style="color:var(--${practiceLang})">${getWordInLang(entry, practiceLang)}</div>
+          <button class="speak-btn speak-btn-${practiceLang}" style="margin-top:10px;" onclick="event.stopPropagation();speak('${getWordInLang(entry,practiceLang).replace(/'/g,"\\'")}','${practiceLang}',this)">🔊</button>
+          <div class="fc-hint" style="margin-top:10px;">Toca la tarjeta para ver la traducción</div>
+        </div>
+        <div class="fc-back">
+          <div class="fc-answer">
+            ${others.map(l=>`<div class="fc-ans-item fc-ans-${l}" style="display:flex;align-items:center;justify-content:center;gap:8px;">${getWordInLang(entry, l)}<button class="speak-btn speak-btn-${l}" onclick="event.stopPropagation();speak('${getWordInLang(entry,l).replace(/'/g,"\\'")}','${l}',this)">🔊</button></div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="fc-controls" id="fc-controls" style="display:none">
+      <button class="fc-btn wrong" onclick="fcAnswer(false)">❌ No sabía</button>
+      <button class="fc-btn right" onclick="fcAnswer(true)">✅ Lo sabía</button>
+    </div>
+  `;
+}
+
+function flipCard() {
+  const fc = document.getElementById('fc');
+  fcFlipped = !fcFlipped;
+  if (fcFlipped) {
+    fc.classList.add('flipped');
+    document.getElementById('fc-controls').style.display = 'flex';
+  }
+}
+
+function fcAnswer(correct) {
+  if (correct) { sessionScore++; }
+  const entry = sessionCards[sessionIdx];
+  entry.stars = correct ? Math.min(3, entry.stars+1) : Math.max(1, entry.stars-1);
+  const idx = dict.findIndex(d=>d.id===entry.id);
+  if (idx>=0) dict[idx].stars = entry.stars;
+  save();
+  sessionIdx++;
+  if (sessionIdx >= sessionCards.length) showResults();
+  else renderFlashcard();
+}
+
+// QUIZ
+function renderQuiz() {
+  const area = document.getElementById('practice-area');
+  const total = sessionCards.length;
+  const pct = (sessionIdx / total * 100).toFixed(0);
+  const entry = sessionCards[sessionIdx];
+  quizAnswered = false;
+
+  // pick wrong options
+  const targetLang = getOtherLangs(practiceLang)[0];
+  const correctAns = getWordInLang(entry, targetLang);
+  const pool = dict.filter(d=>d.id!==entry.id).sort(()=>Math.random()-0.5).slice(0,3).map(d=>getWordInLang(d,targetLang));
+  const options = [...pool, correctAns].sort(()=>Math.random()-0.5);
+
+  area.innerHTML = `
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+    <div style="text-align:center; font-size:0.78rem; color:var(--muted); margin-bottom:12px;">${sessionIdx+1} / ${total}</div>
+    <div class="quiz-card">
+      <div class="quiz-q-lang">${langLabel(practiceLang)} → ${langLabel(targetLang)}</div>
+      <div class="quiz-q-word" style="color:var(--${practiceLang})">${getWordInLang(entry, practiceLang)}</div>
+      <button class="speak-btn speak-btn-${practiceLang}" style="margin:8px auto 0; display:block;" onclick="speak('${getWordInLang(entry,practiceLang).replace(/'/g,"\\'")}','${practiceLang}',this)">🔊</button>
+      <div class="quiz-options" id="quiz-opts">
+        ${options.map(opt=>`<button class="quiz-opt" onclick="quizAnswer(this,'${correctAns}','${opt.replace(/'/g,"&#39;")}')">${opt}</button>`).join('')}
+      </div>
+    </div>
+    <button class="quiz-next" id="quiz-next" onclick="quizNext()">Siguiente →</button>
+  `;
+}
+
+function quizAnswer(btn, correct, chosen) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  document.querySelectorAll('.quiz-opt').forEach(o=>{
+    o.classList.add('disabled');
+    if (o.textContent.trim() === correct) o.classList.add('correct');
+  });
+  if (chosen !== correct) { btn.classList.add('wrong'); }
+  else { sessionScore++; }
+  const entry = sessionCards[sessionIdx];
+  entry.stars = chosen===correct ? Math.min(3,entry.stars+1) : Math.max(1,entry.stars-1);
+  const idx = dict.findIndex(d=>d.id===entry.id);
+  if (idx>=0) dict[idx].stars = entry.stars;
+  save();
+  document.getElementById('quiz-next').style.display = 'block';
+}
+
+function quizNext() {
+  sessionIdx++;
+  if (sessionIdx >= sessionCards.length) showResults();
+  else renderQuiz();
+}
+
+function showResults() {
+  const area = document.getElementById('practice-area');
+  const pct = Math.round(sessionScore/sessionCards.length*100);
+  let msg = pct>=80 ? '🎉 ¡Excelente!' : pct>=50 ? '👍 ¡Buen trabajo!' : '💪 ¡Sigue practicando!';
+  area.innerHTML = `
+    <div class="score-display" style="display:block">
+      <div class="score-num">${pct}%</div>
+      <div class="score-label">${sessionScore} de ${sessionCards.length} correctas</div>
+      <div style="font-size:1.5rem; margin-top:16px;">${msg}</div>
+      <button class="btn-primary" style="margin-top:20px;" onclick="startSession()">🔄 Otra sesión</button>
+    </div>
+  `;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// SPEECH
+const VOICES = { es: 'es-ES', en: 'en-US', fr: 'fr-FR' };
+let synthReady = false;
+window.speechSynthesis.onvoiceschanged = () => { synthReady = true; };
+
+function speak(text, lang, btnEl) {
+  if (!window.speechSynthesis) { showToast('⚠️ Tu navegador no soporta audio'); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = VOICES[lang] || lang;
+  // try to pick a matching voice
+  const voices = window.speechSynthesis.getVoices();
+  const match = voices.find(v => v.lang.startsWith(VOICES[lang]||lang));
+  if (match) utter.voice = match;
+  utter.rate = 0.88;
+  utter.pitch = 1;
+  if (btnEl) {
+    btnEl.classList.add('speaking');
+    utter.onend = () => btnEl.classList.remove('speaking');
+    utter.onerror = () => btnEl.classList.remove('speaking');
+  }
+  window.speechSynthesis.speak(utter);
+}
+
+// INIT
+updateStats();
+renderVocab();
+</script>
+</body>
+</html>
